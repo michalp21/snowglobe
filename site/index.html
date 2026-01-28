@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snowglobe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #0a0a14; }
+    canvas { display: block; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    @keyframes marquee-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @keyframes colon-blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.15; }
+    }
+
+    .marquee-bar {
+      position: fixed;
+      left: 0;
+      width: 100%;
+      height: 28px;
+      background: rgba(5, 5, 12, 0.88);
+      overflow: hidden;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      font-family: 'Silkscreen', cursive;
+      font-size: 13px;
+      color: #c8d0e8;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .top-marquee {
+      top: 0;
+      border-bottom: 1px solid rgba(200, 210, 240, 0.12);
+    }
+    .bottom-marquee {
+      bottom: 0;
+      border-top: 1px solid rgba(200, 210, 240, 0.12);
+    }
+    .marquee-track {
+      display: inline-block;
+      will-change: transform;
+      animation: marquee-scroll 35s linear infinite;
+    }
+    .blink-colon {
+      animation: colon-blink 1s ease-in-out infinite;
+    }
+    .marquee-sep {
+      display: inline-block;
+      margin: 0 1.2em;
+      opacity: 0.35;
+    }
+  </style>
+</head>
+<body>
+  <div class="marquee-bar top-marquee">
+    <div class="marquee-track" id="top-track"></div>
+  </div>
+  <div class="marquee-bar bottom-marquee">
+    <div class="marquee-track" id="bottom-track"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="main.js"></script>
+
+  <script>
+    /* ── Top marquee: Eastern-timezone clock ─────────────── */
+    (function () {
+      var track = document.getElementById('top-track');
+      var SEG = 12;                       // segments per copy
+
+      function createSegments() {
+        var frags = [];
+        for (var i = 0; i < SEG * 2; i++) {   // ×2 for seamless loop
+          var span = document.createElement('span');
+          span.innerHTML =
+            '<span class="marquee-sep">\u25C6</span>' +
+            '<span class="t-h"></span>' +
+            '<span class="blink-colon">:</span>' +
+            '<span class="t-m"></span>' +
+            '<span class="blink-colon">:</span>' +
+            '<span class="t-s"></span> ' +
+            '<span class="t-p"></span> ET';
+          track.appendChild(span);
+          frags.push({
+            h: span.querySelector('.t-h'),
+            m: span.querySelector('.t-m'),
+            s: span.querySelector('.t-s'),
+            p: span.querySelector('.t-p')
+          });
+        }
+        return frags;
+      }
+
+      var parts = createSegments();
+
+      function tick() {
+        var now = new Date();
+        var str = now.toLocaleTimeString('en-US', {
+          timeZone: 'America/New_York',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: true
+        });
+        var m = str.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
+        if (!m) return;
+        var h = m[1], mi = m[2], s = m[3], p = m[4];
+        for (var i = 0; i < parts.length; i++) {
+          parts[i].h.textContent = h;
+          parts[i].m.textContent = mi;
+          parts[i].s.textContent = s;
+          parts[i].p.textContent = p;
+        }
+      }
+
+      tick();
+      setInterval(tick, 1000);
+    })();
+
+    /* ── Bottom marquee: sample text ─────────────────────── */
+    (function () {
+      var track = document.getElementById('bottom-track');
+      var phrases = [
+        'WELCOME TO THE SNOWGLOBE',
+        'DRAG TO EXPLORE',
+        'WATCH THE SNOW FALL',
+        'HAPPY HOLIDAYS',
+        'STAY COZY'
+      ];
+      var seg = phrases.map(function (p) {
+        return '<span class="marquee-sep">\u2605</span>' + p;
+      }).join('');
+      var full = '';
+      for (var i = 0; i < 4; i++) full += seg;   // repeat for width
+      track.innerHTML = full + full;               // duplicate for loop
+    })();
+  </script>
+</body>
+</html>
